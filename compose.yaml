@@ -1,1 +1,38 @@
-services: { }
+services:
+  payment-postgres:
+    image: postgres:16-alpine
+    container_name: palmery-payment-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-paymentdb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5434:5432"
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-paymentdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  palmery-payment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: palmery-payment-app
+    depends_on:
+      payment-postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8082}
+      POSTGRES_URL: jdbc:postgresql://payment-postgres:5432/paymentdb
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-false}
+    ports:
+      - "8082:8082"
+
+volumes:
+  payment-postgres-data:
