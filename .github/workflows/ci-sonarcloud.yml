@@ -1,0 +1,89 @@
+name: CI SonarCloud
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build, test, and generate coverage
+        run: |
+          chmod +x gradlew
+          ./gradlew test jacocoTestReport --no-daemon
+
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.projectName=palmery-payment
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.sources=src/main
+            -Dsonar.tests=src/test
+            -Dsonar.java.binaries=build/classes/java/main
+            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+            -Dsonar.exclusions=**/.gradle/**,**/build/**
+
+      - name: SonarCloud Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          pollingTimeoutSec: 300
+
+  cd:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build application JAR
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar --no-daemon
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: palmery-payment-jar
+          path: build/libs/*.jar
+          if-no-files-found: error
