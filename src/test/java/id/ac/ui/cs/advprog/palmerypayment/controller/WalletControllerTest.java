@@ -3,13 +3,13 @@ package id.ac.ui.cs.advprog.palmerypayment.controller;
 import id.ac.ui.cs.advprog.palmerypayment.dto.PayrollHistoryItem;
 import id.ac.ui.cs.advprog.palmerypayment.dto.WalletDashboardView;
 import id.ac.ui.cs.advprog.palmerypayment.service.WalletDashboardService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.ui.ExtendedModelMap;
-import org.springframework.ui.Model;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -30,7 +30,7 @@ class WalletControllerTest {
     private WalletController walletController;
 
     @Test
-    void walletPageAddsWalletModelAndReturnsViewName() {
+    void getWalletReturnsPayloadFromService() {
         WalletDashboardView wallet = new WalletDashboardView(
                 "user-10",
                 new BigDecimal("2500.00"),
@@ -42,11 +42,10 @@ class WalletControllerTest {
         );
         when(walletDashboardService.getWalletDashboard("user-10")).thenReturn(wallet);
 
-        Model model = new ExtendedModelMap();
-        String viewName = walletController.walletPage("user-10", model);
+        ResponseEntity<WalletDashboardView> response = walletController.getWallet("user-10");
 
-        assertEquals("wallet", viewName);
-        assertSame(wallet, model.getAttribute("wallet"));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertSame(wallet, response.getBody());
         verify(walletDashboardService).getWalletDashboard("user-10");
     }
 }
