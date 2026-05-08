@@ -16,20 +16,30 @@ class PayrollTest {
     @Test
     void payrollConstructorAndPrePersistWork() {
         Wallet wallet = new Wallet("user-1", new BigDecimal("2000.00"));
-        Payroll payroll = new Payroll(wallet, new BigDecimal("350.00"), "Payroll April");
+        Payroll payroll = new Payroll(
+                wallet,
+                new BigDecimal("350.00"),
+                "Payroll April",
+                "BURUH",
+                "PENDING",
+                new BigDecimal("35.00"),
+                new BigDecimal("12.00"),
+                new BigDecimal("10.00"),
+                "90% x 35.00 Kg x SawitDollar 12.00/Kg"
+        );
 
         assertNull(payroll.getId());
         assertEquals(wallet, payroll.getWallet());
         assertEquals(new BigDecimal("350.00"), payroll.getAmount());
         assertEquals("Payroll April", payroll.getDescription());
-        assertNull(payroll.getPaidAt());
+        assertNull(payroll.getCreatedAt());
 
         payroll.prePersist();
-        Instant paidAt = payroll.getPaidAt();
-        assertNotNull(paidAt);
+        Instant createdAt = payroll.getCreatedAt();
+        assertNotNull(createdAt);
 
         payroll.prePersist();
-        assertEquals(paidAt, payroll.getPaidAt());
+        assertEquals(createdAt, payroll.getCreatedAt());
     }
 
     @Test
@@ -43,18 +53,28 @@ class PayrollTest {
         assertNull(payroll.getWallet());
         assertNull(payroll.getAmount());
         assertNull(payroll.getDescription());
-        assertNull(payroll.getPaidAt());
+        assertNull(payroll.getCreatedAt());
     }
 
     @Test
-    void prePersistDoesNotOverrideExistingPaidAt() {
+    void prePersistDoesNotOverrideExistingCreatedAt() {
         Wallet wallet = new Wallet("user-3", new BigDecimal("100.00"));
-        Payroll payroll = new Payroll(wallet, new BigDecimal("25.00"), "Payroll Test");
-        Instant fixedPaidAt = Instant.parse("2026-04-01T00:00:00Z");
-        ReflectionTestUtils.setField(payroll, "paidAt", fixedPaidAt);
+        Payroll payroll = new Payroll(
+                wallet,
+                new BigDecimal("25.00"),
+                "Payroll Test",
+                "SUPIR",
+                "PENDING",
+                new BigDecimal("10.00"),
+                new BigDecimal("10.00"),
+                new BigDecimal("10.00"),
+                "90% x 10.00 Kg x SawitDollar 10.00/Kg"
+        );
+        Instant fixedCreatedAt = Instant.parse("2026-04-01T00:00:00Z");
+        ReflectionTestUtils.setField(payroll, "createdAt", fixedCreatedAt);
 
         payroll.prePersist();
 
-        assertEquals(fixedPaidAt, payroll.getPaidAt());
+        assertEquals(fixedCreatedAt, payroll.getCreatedAt());
     }
 }

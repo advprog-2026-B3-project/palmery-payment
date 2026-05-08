@@ -1,7 +1,10 @@
 package id.ac.ui.cs.advprog.palmerypayment.controller;
 
 import id.ac.ui.cs.advprog.palmerypayment.dto.DebugCheckRequest;
+import id.ac.ui.cs.advprog.palmerypayment.dto.PublishEventRequest;
+import id.ac.ui.cs.advprog.palmerypayment.event.DomainEventMessage;
 import id.ac.ui.cs.advprog.palmerypayment.model.IntegrationCheck;
+import id.ac.ui.cs.advprog.palmerypayment.service.DomainEventPublisher;
 import id.ac.ui.cs.advprog.palmerypayment.service.IntegrationDebugService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +30,9 @@ class DebugControllerTest {
 
     @Mock
     private IntegrationDebugService integrationDebugService;
+
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
 
     @InjectMocks
     private DebugController debugController;
@@ -106,5 +112,25 @@ class DebugControllerTest {
         assertEquals(101L, response.getBody().getFirst().get("id"));
         assertEquals("frontend-debug", response.getBody().getFirst().get("source"));
         assertNotNull(response.getBody().getFirst().get("created_at"));
+    }
+
+    @Test
+    void publishEventReturnsCreatedPayload() {
+        PublishEventRequest request = new PublishEventRequest();
+        request.setEventType("UserBaru");
+        request.setPayload(Map.of("userId", "buruh-1"));
+
+        DomainEventMessage published = new DomainEventMessage(
+                "evt-1",
+                "UserBaru",
+                Instant.parse("2026-05-01T00:00:00Z"),
+                Map.of("userId", "buruh-1")
+        );
+        when(domainEventPublisher.publish("UserBaru", Map.of("userId", "buruh-1"))).thenReturn(published);
+
+        ResponseEntity<?> response = debugController.publishEvent(request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("evt-1", ((Map<?, ?>) response.getBody()).get("eventId"));
     }
 }

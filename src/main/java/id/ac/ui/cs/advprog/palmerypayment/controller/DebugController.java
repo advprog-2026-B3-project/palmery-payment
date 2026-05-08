@@ -1,7 +1,10 @@
 package id.ac.ui.cs.advprog.palmerypayment.controller;
 
 import id.ac.ui.cs.advprog.palmerypayment.dto.DebugCheckRequest;
+import id.ac.ui.cs.advprog.palmerypayment.dto.PublishEventRequest;
+import id.ac.ui.cs.advprog.palmerypayment.event.DomainEventMessage;
 import id.ac.ui.cs.advprog.palmerypayment.model.IntegrationCheck;
+import id.ac.ui.cs.advprog.palmerypayment.service.DomainEventPublisher;
 import id.ac.ui.cs.advprog.palmerypayment.service.IntegrationDebugService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +25,14 @@ import java.util.Map;
 public class DebugController {
 
     private final IntegrationDebugService integrationDebugService;
+    private final DomainEventPublisher domainEventPublisher;
 
-    public DebugController(IntegrationDebugService integrationDebugService) {
+    public DebugController(
+            IntegrationDebugService integrationDebugService,
+            DomainEventPublisher domainEventPublisher
+    ) {
         this.integrationDebugService = integrationDebugService;
+        this.domainEventPublisher = domainEventPublisher;
     }
 
     @GetMapping("/healthcheck")
@@ -49,6 +57,21 @@ public class DebugController {
                 .map(this::toResponseEntry)
                 .toList();
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/events")
+    public ResponseEntity<?> publishEvent(@RequestBody PublishEventRequest request) {
+        try {
+            DomainEventMessage publishedEvent = domainEventPublisher.publish(request.getEventType(), request.getPayload());
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "eventId", publishedEvent.getEventId(),
+                    "eventType", publishedEvent.getEventType(),
+                    "occurredAt", publishedEvent.getOccurredAt(),
+                    "payload", publishedEvent.getPayload()
+            ));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
+        }
     }
 
     private Map<String, Object> toResponseEntry(IntegrationCheck check) {

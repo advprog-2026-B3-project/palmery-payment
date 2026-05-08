@@ -35,17 +35,25 @@ class WalletControllerTest {
                 "user-10",
                 new BigDecimal("2500.00"),
                 List.of(new PayrollHistoryItem(
+                        10L,
+                        "BURUH",
+                        "APPROVED",
                         new BigDecimal("1000.00"),
                         "Payroll Maret",
-                        Instant.parse("2026-03-01T10:00:00Z")
+                        new BigDecimal("100.00"),
+                        new BigDecimal("12.00"),
+                        "90% x 100.00 Kg x SawitDollar 12.00/Kg",
+                        null,
+                        Instant.parse("2026-03-01T10:00:00Z"),
+                        Instant.parse("2026-03-01T11:00:00Z")
                 ))
         );
-        when(walletDashboardService.getWalletDashboard("user-10")).thenReturn(wallet);
+        when(walletDashboardService.getWalletDashboard("user-10", null, null, null)).thenReturn(wallet);
 
-        ResponseEntity<WalletDashboardView> response = walletController.getWallet("user-10");
+        ResponseEntity<WalletDashboardView> response = walletController.getWallet("user-10", null, null, null);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(wallet, response.getBody());
-        verify(walletDashboardService).getWalletDashboard("user-10");
+        verify(walletDashboardService).getWalletDashboard("user-10", null, null, null);
     }
 }
