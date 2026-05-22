@@ -58,7 +58,7 @@ class WalletDashboardServiceImplTest {
                 new BigDecimal("500.00"),
                 "Payroll Februari",
                 "BURUH",
-                "APPROVED",
+                "ACCEPTED",
                 new BigDecimal("50.00"),
                 new BigDecimal("12.00"),
                 new BigDecimal("10.00"),
@@ -100,31 +100,31 @@ class WalletDashboardServiceImplTest {
         pendingPayroll.prePersist();
         ReflectionTestUtils.setField(pendingPayroll, "createdAt", Instant.parse("2026-02-10T08:00:00Z"));
 
-        Payroll approvedPayroll = new Payroll(
+        Payroll acceptedPayroll = new Payroll(
                 wallet,
                 new BigDecimal("200.00"),
-                "Approved payroll",
+                "Accepted payroll",
                 "SUPIR",
-                "APPROVED",
+                "ACCEPTED",
                 new BigDecimal("20.00"),
                 new BigDecimal("10.00"),
                 new BigDecimal("10.00"),
                 "detail"
         );
-        approvedPayroll.prePersist();
-        ReflectionTestUtils.setField(approvedPayroll, "createdAt", Instant.parse("2026-02-11T08:00:00Z"));
+        acceptedPayroll.prePersist();
+        ReflectionTestUtils.setField(acceptedPayroll, "createdAt", Instant.parse("2026-02-11T08:00:00Z"));
 
-        when(payrollRepository.findByWalletOrderByCreatedAtDesc(wallet)).thenReturn(List.of(pendingPayroll, approvedPayroll));
+        when(payrollRepository.findByWalletOrderByCreatedAtDesc(wallet)).thenReturn(List.of(pendingPayroll, acceptedPayroll));
 
         WalletDashboardView result = walletDashboardService.getWalletDashboard(
                 "user-3",
-                "APPROVED",
+                "ACCEPTED",
                 LocalDate.parse("2026-02-11"),
                 LocalDate.parse("2026-02-11")
         );
 
         assertEquals(1, result.payrollHistory().size());
-        assertEquals("APPROVED", result.payrollHistory().getFirst().status());
+        assertEquals("ACCEPTED", result.payrollHistory().getFirst().status());
     }
 
     @Test

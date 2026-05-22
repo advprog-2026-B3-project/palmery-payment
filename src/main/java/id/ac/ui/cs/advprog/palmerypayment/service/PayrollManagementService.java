@@ -224,14 +224,17 @@ public class PayrollManagementService {
         payload.put("reason", payroll.getRejectionReason());
         payload.put(
                 "title",
-                "APPROVED".equals(payroll.getStatus()) ? "Payroll disetujui" : "Payroll ditolak"
+                "ACCEPTED".equals(payroll.getStatus()) ? "Payroll disetujui" : "Payroll ditolak"
         );
         payload.put(
                 "message",
-                "APPROVED".equals(payroll.getStatus())
+                "ACCEPTED".equals(payroll.getStatus())
                         ? "Payroll Anda sudah disetujui dan saldo wallet telah diperbarui."
                         : "Payroll Anda ditolak oleh admin."
         );
-        domainEventPublisher.publish("PayrollDiproses", payload);
+        domainEventPublisher.publish(
+                "ACCEPTED".equals(payroll.getStatus()) ? "PAYROLL_APPROVED" : "PAYROLL_REJECTED",
+                payload
+        );
     }
 }

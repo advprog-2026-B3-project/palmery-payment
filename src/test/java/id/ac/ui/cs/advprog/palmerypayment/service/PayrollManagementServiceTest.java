@@ -60,7 +60,7 @@ class PayrollManagementServiceTest {
     }
 
     @Test
-    void approveTransfersBalanceAndMarksPayrollApproved() {
+    void approveTransfersBalanceAndMarksPayrollAccepted() {
         Wallet recipientWallet = new Wallet("supir-1", BigDecimal.ZERO);
         Wallet adminWallet = new Wallet("admin-1", new BigDecimal("5000.00"));
         Payroll payroll = new Payroll(
@@ -81,10 +81,10 @@ class PayrollManagementServiceTest {
 
         PayrollSummaryView result = payrollManagementService.approve(1L, "admin-1");
 
-        assertEquals("APPROVED", result.status());
+        assertEquals("ACCEPTED", result.status());
         verify(walletService).subtractBalance(adminWallet, new BigDecimal("250.00"));
         verify(walletService).addBalance(recipientWallet, new BigDecimal("250.00"));
-        verify(domainEventPublisher).publish(org.mockito.ArgumentMatchers.eq("PayrollDiproses"), any());
+        verify(domainEventPublisher).publish(org.mockito.ArgumentMatchers.eq("PAYROLL_APPROVED"), any());
     }
 
     @Test

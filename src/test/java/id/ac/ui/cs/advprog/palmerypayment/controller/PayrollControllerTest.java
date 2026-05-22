@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PayrollControllerTest {
@@ -65,7 +66,7 @@ class PayrollControllerTest {
                 1L,
                 "buruh-1",
                 "BURUH",
-                "APPROVED",
+                "ACCEPTED",
                 new BigDecimal("1080.00"),
                 new BigDecimal("100.00"),
                 new BigDecimal("12.00"),
@@ -81,6 +82,38 @@ class PayrollControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(summary, response.getBody());
+    }
+
+    @Test
+    void listPayrollsForWorkerForcesAuthenticatedSubject() {
+        List<PayrollSummaryView> summaries = List.of();
+        when(payrollManagementService.listPayrolls("PENDING", "buruh-1")).thenReturn(summaries);
+
+        ResponseEntity<List<PayrollSummaryView>> response = payrollController.listPayrolls(
+                "PENDING",
+                "other-user",
+                authentication("buruh-1", "BURUH")
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(summaries, response.getBody());
+        verify(payrollManagementService).listPayrolls("PENDING", "buruh-1");
+    }
+
+    @Test
+    void listPayrollsForAdminKeepsRequestedUserFilter() {
+        List<PayrollSummaryView> summaries = List.of();
+        when(payrollManagementService.listPayrolls("PENDING", "buruh-1")).thenReturn(summaries);
+
+        ResponseEntity<List<PayrollSummaryView>> response = payrollController.listPayrolls(
+                "PENDING",
+                "buruh-1",
+                authentication("admin-utama", "ADMIN")
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(summaries, response.getBody());
+        verify(payrollManagementService).listPayrolls("PENDING", "buruh-1");
     }
 
     private JwtAuthenticationToken authentication(String subject, String role) {

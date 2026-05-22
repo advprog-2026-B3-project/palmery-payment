@@ -40,7 +40,7 @@ class WalletControllerTest {
                 List.of(new PayrollHistoryItem(
                         10L,
                         "BURUH",
-                        "APPROVED",
+                        "ACCEPTED",
                         new BigDecimal("1000.00"),
                         "Payroll Maret",
                         new BigDecimal("100.00"),

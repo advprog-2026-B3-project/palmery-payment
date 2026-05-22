@@ -166,7 +166,7 @@ public class Payroll {
     }
 
     public void approve() {
-        this.status = "APPROVED";
+        this.status = "ACCEPTED";
         this.rejectionReason = null;
         this.processedAt = Instant.now();
     }

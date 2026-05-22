@@ -33,9 +33,12 @@ public class PayrollController {
     @GetMapping
     public ResponseEntity<List<PayrollSummaryView>> listPayrolls(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String userId
+            @RequestParam(required = false) String userId,
+            JwtAuthenticationToken authentication
     ) {
-        return ResponseEntity.ok(payrollManagementService.listPayrolls(status, userId));
+        CurrentUser currentUser = CurrentUser.from(authentication);
+        String effectiveUserId = currentUser.isAdmin() ? userId : currentUser.userId();
+        return ResponseEntity.ok(payrollManagementService.listPayrolls(status, effectiveUserId));
     }
 
     @PostMapping("/generate")
