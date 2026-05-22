@@ -59,6 +59,8 @@ class PaymentEventConsumerTest {
         verify(payrollManagementService).generateFromEvent(
                 "evt-2",
                 "PanenApproved",
+                "HASIL_PANEN",
+                null,
                 "buruh-2",
                 "BURUH",
                 new BigDecimal("120.50"),
