@@ -97,6 +97,7 @@ public class PaymentEventConsumer {
     private void handleHarvestApproved(String eventId, Map<String, Object> payload) {
         String userId = firstString(payload, "userId", "buruhUserId", "workerUserId", "workerId", "targetUserId");
         BigDecimal quantityKg = firstDecimal(payload, "quantityKg", "kg", "approvedKg", "kgHarvested");
+        String sourceId = firstString(payload, "sourceId", "harvestId", "hasilPanenId");
         if (userId == null || quantityKg == null) {
             log.warn("PanenApproved missing userId or quantityKg");
             return;
@@ -104,7 +105,9 @@ public class PaymentEventConsumer {
 
         payrollManagementService.generateFromEvent(
                 eventId,
-            "PanenApproved",
+                "PanenApproved",
+                "HASIL_PANEN",
+                sourceId,
                 userId,
                 "BURUH",
                 quantityKg,
@@ -124,6 +127,7 @@ public class PaymentEventConsumer {
     private void handleShipmentApprovedByMandor(String eventId, Map<String, Object> payload) {
         String userId = firstString(payload, "userId", "supirUserId", "driverUserId", "supirId", "targetUserId");
         BigDecimal quantityKg = firstDecimal(payload, "quantityKg", "kg", "approvedKg", "totalKg");
+        String sourceId = firstString(payload, "sourceId", "pengirimanId");
         if (userId == null || quantityKg == null) {
             log.warn("PengirimanApprovedMandor missing userId or quantityKg");
             return;
@@ -131,7 +135,9 @@ public class PaymentEventConsumer {
 
         payrollManagementService.generateFromEvent(
                 eventId,
-            "PengirimanApprovedMandor",
+                "PengirimanApprovedMandor",
+                "PENGIRIMAN",
+                sourceId,
                 userId,
                 "SUPIR",
                 quantityKg,
@@ -151,6 +157,7 @@ public class PaymentEventConsumer {
     private void handleShipmentApprovedByAdmin(String eventId, Map<String, Object> payload) {
         String userId = firstString(payload, "userId", "mandorUserId", "mandorId", "targetUserId");
         BigDecimal quantityKg = firstDecimal(payload, "kgDiakui", "recognizedKg", "approvedKg", "quantityKg", "kg");
+        String sourceId = firstString(payload, "sourceId", "pengirimanId");
         if (userId == null || quantityKg == null) {
             log.warn("PengirimanApprovedAdmin missing userId or kgDiakui");
             return;
@@ -158,7 +165,9 @@ public class PaymentEventConsumer {
 
         payrollManagementService.generateFromEvent(
                 eventId,
-            "PengirimanApprovedAdmin",
+                "PengirimanApprovedAdmin",
+                "PENGIRIMAN",
+                sourceId,
                 userId,
                 "MANDOR",
                 quantityKg,

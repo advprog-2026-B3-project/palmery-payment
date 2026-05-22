@@ -48,6 +48,8 @@ class PayrollControllerTest {
                 new BigDecimal("12.00"),
                 "Payroll Buruh",
                 "detail",
+                "HASIL_PANEN",
+                "harvest-1",
                 null,
                 Instant.parse("2026-04-01T00:00:00Z"),
                 null
@@ -72,6 +74,8 @@ class PayrollControllerTest {
                 new BigDecimal("12.00"),
                 "Payroll Buruh",
                 "detail",
+                "HASIL_PANEN",
+                "harvest-1",
                 null,
                 Instant.parse("2026-04-01T00:00:00Z"),
                 Instant.parse("2026-04-01T00:05:00Z")

@@ -11,12 +11,19 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.UniqueConstraint;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "payroll")
+@Table(
+        name = "payroll",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_payroll_source_type_id_role",
+                columnNames = {"source_type", "source_id", "type"}
+        )
+)
 public class Payroll {
 
     @Id
@@ -59,6 +66,12 @@ public class Payroll {
 
     @Column(length = 100)
     private String sourceEventType;
+
+    @Column(name = "source_type", length = 50)
+    private String sourceType;
+
+    @Column(name = "source_id", length = 100)
+    private String sourceId;
 
     @Column(nullable = false)
     private Instant createdAt;
@@ -157,6 +170,14 @@ public class Payroll {
         return sourceEventType;
     }
 
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -180,5 +201,10 @@ public class Payroll {
     public void attachEventSource(String sourceEventId, String sourceEventType) {
         this.sourceEventId = sourceEventId;
         this.sourceEventType = sourceEventType;
+    }
+
+    public void attachBusinessSource(String sourceType, String sourceId) {
+        this.sourceType = sourceType;
+        this.sourceId = sourceId;
     }
 }

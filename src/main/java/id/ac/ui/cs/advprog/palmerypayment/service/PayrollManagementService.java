@@ -65,6 +65,8 @@ public class PayrollManagementService {
                 request.getQuantityKg(),
                 description,
                 null,
+                null,
+                null,
                 null
         );
     }
@@ -98,12 +100,27 @@ public class PayrollManagementService {
     public PayrollSummaryView generateFromEvent(
             String sourceEventId,
             String sourceEventType,
+            String sourceType,
+            String sourceId,
             String userId,
             String role,
             BigDecimal quantityKg,
             String description,
             String fallbackDescription
     ) {
+        String normalizedRole = normalizeRole(role);
+        String normalizedSourceType = normalizeOptionalSourceType(sourceType);
+        String normalizedSourceId = normalizeOptionalSourceId(sourceId);
+
+        if (normalizedSourceType != null && normalizedSourceId != null) {
+            Payroll existingPayroll = payrollRepository
+                    .findBySourceTypeAndSourceIdAndType(normalizedSourceType, normalizedSourceId, normalizedRole)
+                    .orElse(null);
+            if (existingPayroll != null) {
+                return toSummaryView(existingPayroll);
+            }
+        }
+
         if (sourceEventId != null && !sourceEventId.isBlank()) {
             Payroll existingPayroll = payrollRepository.findBySourceEventId(sourceEventId.trim()).orElse(null);
             if (existingPayroll != null) {
@@ -116,10 +133,42 @@ public class PayrollManagementService {
             resolvedDescription = fallbackDescription;
         }
         if (resolvedDescription == null || resolvedDescription.isBlank()) {
-            resolvedDescription = "Payroll otomatis dari event " + normalizeRole(role).toLowerCase(Locale.ROOT);
+            resolvedDescription = "Payroll otomatis dari event " + normalizedRole.toLowerCase(Locale.ROOT);
         }
 
-        return createPayroll(userId, role, quantityKg, resolvedDescription, sourceEventId, sourceEventType);
+        return createPayroll(
+                userId,
+                normalizedRole,
+                quantityKg,
+                resolvedDescription,
+                sourceEventId,
+                sourceEventType,
+                normalizedSourceType,
+                normalizedSourceId
+        );
+    }
+
+    @Transactional
+    public PayrollSummaryView generateFromEvent(
+            String sourceEventId,
+            String sourceEventType,
+            String userId,
+            String role,
+            BigDecimal quantityKg,
+            String description,
+            String fallbackDescription
+    ) {
+        return generateFromEvent(
+                sourceEventId,
+                sourceEventType,
+                null,
+                null,
+                userId,
+                role,
+                quantityKg,
+                description,
+                fallbackDescription
+        );
     }
 
     private PayrollSummaryView createPayroll(
@@ -128,7 +177,9 @@ public class PayrollManagementService {
             BigDecimal quantityKg,
             String description,
             String sourceEventId,
-            String sourceEventType
+            String sourceEventType,
+            String sourceType,
+            String sourceId
     ) {
         if (quantityKg == null || quantityKg.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("quantityKg must be positive");
@@ -158,6 +209,9 @@ public class PayrollManagementService {
         if (sourceEventId != null && !sourceEventId.isBlank()) {
             payroll.attachEventSource(sourceEventId.trim(), sourceEventType);
         }
+        if (sourceType != null && sourceId != null) {
+            payroll.attachBusinessSource(sourceType, sourceId);
+        }
 
         return toSummaryView(payrollRepository.save(payroll));
     }
@@ -182,6 +236,8 @@ public class PayrollManagementService {
                 payroll.getRatePerKg(),
                 payroll.getDescription(),
                 payroll.getCalculationDetail(),
+                payroll.getSourceType(),
+                payroll.getSourceId(),
                 payroll.getRejectionReason(),
                 payroll.getCreatedAt(),
                 payroll.getProcessedAt()
@@ -213,6 +269,20 @@ public class PayrollManagementService {
         return userId.trim();
     }
 
+    private String normalizeOptionalSourceType(String sourceType) {
+        if (sourceType == null || sourceType.isBlank()) {
+            return null;
+        }
+        return sourceType.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeOptionalSourceId(String sourceId) {
+        if (sourceId == null || sourceId.isBlank()) {
+            return null;
+        }
+        return sourceId.trim();
+    }
+
     private void publishPayrollProcessedEvent(Payroll payroll) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("payrollId", payroll.getId());
@@ -220,6 +290,8 @@ public class PayrollManagementService {
         payload.put("status", payroll.getStatus());
         payload.put("amount", payroll.getAmount());
         payload.put("type", payroll.getType());
+        payload.put("sourceType", payroll.getSourceType());
+        payload.put("sourceId", payroll.getSourceId());
         payload.put("description", payroll.getDescription());
         payload.put("reason", payroll.getRejectionReason());
         payload.put(

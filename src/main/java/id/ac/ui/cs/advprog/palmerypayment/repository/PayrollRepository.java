@@ -11,4 +11,6 @@ public interface PayrollRepository extends JpaRepository<Payroll, Long> {
     List<Payroll> findByWalletOrderByCreatedAtDesc(Wallet wallet);
 
     Optional<Payroll> findBySourceEventId(String sourceEventId);
+
+    Optional<Payroll> findBySourceTypeAndSourceIdAndType(String sourceType, String sourceId, String type);
 }

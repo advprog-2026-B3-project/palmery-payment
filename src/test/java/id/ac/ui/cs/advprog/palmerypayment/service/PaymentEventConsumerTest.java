@@ -80,12 +80,14 @@ class PaymentEventConsumerTest {
                 "HASIL_PANEN_APPROVED",
                 Instant.now(),
                 0,
-                Map.of("workerId", "buruh-2b", "quantityKg", 42)
+                Map.of("workerId", "buruh-2b", "quantityKg", 42, "harvestId", "harvest-42")
         ));
 
         verify(payrollManagementService).generateFromEvent(
                 "evt-2b",
                 "PanenApproved",
+                "HASIL_PANEN",
+                "harvest-42",
                 "buruh-2b",
                 "BURUH",
                 new BigDecimal("42.00"),
@@ -101,12 +103,14 @@ class PaymentEventConsumerTest {
                 "PENGIRIMAN_APPROVED_BY_MANDOR",
                 Instant.now(),
                 0,
-                Map.of("supirId", "supir-3b", "totalKg", 300)
+                Map.of("supirId", "supir-3b", "totalKg", 300, "pengirimanId", "shipment-300")
         ));
 
         verify(payrollManagementService).generateFromEvent(
                 "evt-3b",
                 "PengirimanApprovedMandor",
+                "PENGIRIMAN",
+                "shipment-300",
                 "supir-3b",
                 "SUPIR",
                 new BigDecimal("300.00"),
@@ -122,12 +126,14 @@ class PaymentEventConsumerTest {
                 "PENGIRIMAN_PARTIALLY_APPROVED_BY_ADMIN",
                 Instant.now(),
                 0,
-                Map.of("mandorId", "mandor-4b", "recognizedKg", 175)
+                Map.of("mandorId", "mandor-4b", "recognizedKg", 175, "pengirimanId", "shipment-175")
         ));
 
         verify(payrollManagementService).generateFromEvent(
                 "evt-4b",
                 "PengirimanApprovedAdmin",
+                "PENGIRIMAN",
+                "shipment-175",
                 "mandor-4b",
                 "MANDOR",
                 new BigDecimal("175.00"),

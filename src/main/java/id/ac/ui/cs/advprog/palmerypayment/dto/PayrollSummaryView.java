@@ -13,6 +13,8 @@ public record PayrollSummaryView(
         BigDecimal ratePerKg,
         String description,
         String calculationDetail,
+        String sourceType,
+        String sourceId,
         String rejectionReason,
         Instant createdAt,
         Instant processedAt

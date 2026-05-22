@@ -122,4 +122,66 @@ class PayrollManagementServiceTest {
         assertEquals("MANDOR", result.type());
         verify(payrollRepository).findBySourceEventId("evt-duplicate");
     }
+
+    @Test
+    void generateFromEventReturnsExistingPayrollWhenBusinessSourceAlreadyProcessedForRole() {
+        Wallet wallet = new Wallet("supir-1", BigDecimal.ZERO);
+        Payroll payroll = new Payroll(
+                wallet,
+                new BigDecimal("270.00"),
+                "Existing supir payroll",
+                "SUPIR",
+                "PENDING",
+                new BigDecimal("30.00"),
+                new BigDecimal("10.00"),
+                new BigDecimal("10.00"),
+                "detail"
+        );
+
+        when(payrollRepository.findBySourceTypeAndSourceIdAndType(
+                "PENGIRIMAN",
+                "pengiriman-1",
+                "SUPIR"
+        )).thenReturn(Optional.of(payroll));
+
+        PayrollSummaryView result = payrollManagementService.generateFromEvent(
+                "evt-new",
+                "PengirimanApprovedMandor",
+                "PENGIRIMAN",
+                "pengiriman-1",
+                "supir-1",
+                "SUPIR",
+                new BigDecimal("30.00"),
+                "ignored",
+                "ignored"
+        );
+
+        assertEquals("SUPIR", result.type());
+        verify(payrollRepository).findBySourceTypeAndSourceIdAndType("PENGIRIMAN", "pengiriman-1", "SUPIR");
+    }
+
+    @Test
+    void generateFromEventAttachesBusinessSourceForNewPayroll() {
+        Wallet wallet = new Wallet("buruh-1", BigDecimal.ZERO);
+
+        when(walletService.getOrCreateWallet("buruh-1")).thenReturn(wallet);
+        when(wageConfigService.getRateForRole("BURUH")).thenReturn(new BigDecimal("12.00"));
+        when(payrollRepository.save(any(Payroll.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PayrollSummaryView result = payrollManagementService.generateFromEvent(
+                "evt-harvest",
+                "PanenApproved",
+                "HASIL_PANEN",
+                "harvest-1",
+                "buruh-1",
+                "BURUH",
+                new BigDecimal("100.00"),
+                "Panen disetujui",
+                "fallback"
+        );
+
+        assertEquals("HASIL_PANEN", result.sourceType());
+        assertEquals("harvest-1", result.sourceId());
+        assertEquals(new BigDecimal("1080.00"), result.amount());
+    }
 }

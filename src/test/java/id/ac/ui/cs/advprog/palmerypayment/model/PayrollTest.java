@@ -77,4 +77,25 @@ class PayrollTest {
 
         assertEquals(fixedCreatedAt, payroll.getCreatedAt());
     }
+
+    @Test
+    void attachBusinessSourceStoresSourceTypeAndId() {
+        Wallet wallet = new Wallet("mandor-1", BigDecimal.ZERO);
+        Payroll payroll = new Payroll(
+                wallet,
+                new BigDecimal("450.00"),
+                "Payroll Mandor",
+                "MANDOR",
+                "PENDING",
+                new BigDecimal("50.00"),
+                new BigDecimal("10.00"),
+                new BigDecimal("10.00"),
+                "90% x 50.00 Kg x SawitDollar 10.00/Kg"
+        );
+
+        payroll.attachBusinessSource("PENGIRIMAN", "pengiriman-1");
+
+        assertEquals("PENGIRIMAN", payroll.getSourceType());
+        assertEquals("pengiriman-1", payroll.getSourceId());
+    }
 }
