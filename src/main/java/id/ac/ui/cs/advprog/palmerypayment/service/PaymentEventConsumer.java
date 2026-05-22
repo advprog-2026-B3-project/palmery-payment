@@ -47,10 +47,10 @@ public class PaymentEventConsumer {
             switch (eventType.toUpperCase(Locale.ROOT)) {
                 case "USERBARU" -> handleUserCreated(payload);
                 case "PENUGASANBARU" -> handleAssignmentEvent(payload, eventType);
-                case "PANENAPPROVED" -> handleHarvestApproved(event.getEventId(), payload);
-                case "PENGIRIMANAPPROVEDMANDOR" -> handleShipmentApprovedByMandor(event.getEventId(), payload);
-                case "PENGIRIMANAPPROVEDADMIN" -> handleShipmentApprovedByAdmin(event.getEventId(), payload);
-                case "PANENREJECTED", "PENGIRIMANTIBA", "PAYROLLDIPROSES" -> handleNotificationOnlyEvent(payload, eventType);
+                case "PANENAPPROVED", "HASIL_PANEN_APPROVED" -> handleHarvestApproved(event.getEventId(), payload);
+                case "PENGIRIMANAPPROVEDMANDOR", "PENGIRIMAN_APPROVED_BY_MANDOR" -> handleShipmentApprovedByMandor(event.getEventId(), payload);
+                case "PENGIRIMANAPPROVEDADMIN", "PENGIRIMAN_APPROVED_BY_ADMIN", "PENGIRIMAN_PARTIALLY_APPROVED_BY_ADMIN" -> handleShipmentApprovedByAdmin(event.getEventId(), payload);
+                case "PANENREJECTED", "PENGIRIMANTIBA", "PAYROLLDIPROSES", "PAYROLL_APPROVED", "PAYROLL_REJECTED" -> handleNotificationOnlyEvent(payload, eventType);
                 default -> log.info("Ignoring unsupported event type {}", eventType);
             }
         } catch (RuntimeException exception) {
@@ -104,7 +104,7 @@ public class PaymentEventConsumer {
 
         payrollManagementService.generateFromEvent(
                 eventId,
-                "PanenApproved",
+            "PanenApproved",
                 userId,
                 "BURUH",
                 quantityKg,
@@ -131,7 +131,7 @@ public class PaymentEventConsumer {
 
         payrollManagementService.generateFromEvent(
                 eventId,
-                "PengirimanApprovedMandor",
+            "PengirimanApprovedMandor",
                 userId,
                 "SUPIR",
                 quantityKg,
@@ -158,7 +158,7 @@ public class PaymentEventConsumer {
 
         payrollManagementService.generateFromEvent(
                 eventId,
-                "PengirimanApprovedAdmin",
+            "PengirimanApprovedAdmin",
                 userId,
                 "MANDOR",
                 quantityKg,

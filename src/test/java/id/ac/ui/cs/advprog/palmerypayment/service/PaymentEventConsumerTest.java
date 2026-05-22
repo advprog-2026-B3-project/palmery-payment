@@ -74,6 +74,69 @@ class PaymentEventConsumerTest {
     }
 
     @Test
+    void consumeHarvestApprovedAliasGeneratesPayroll() {
+        paymentEventConsumer.consume(new DomainEventMessage(
+                "evt-2b",
+                "HASIL_PANEN_APPROVED",
+                Instant.now(),
+                0,
+                Map.of("workerId", "buruh-2b", "quantityKg", 42)
+        ));
+
+        verify(payrollManagementService).generateFromEvent(
+                "evt-2b",
+                "PanenApproved",
+                "buruh-2b",
+                "BURUH",
+                new BigDecimal("42.00"),
+                null,
+                "Panen approved untuk 42.00 Kg"
+        );
+    }
+
+    @Test
+    void consumePengirimanApprovedByMandorAliasGeneratesPayroll() {
+        paymentEventConsumer.consume(new DomainEventMessage(
+                "evt-3b",
+                "PENGIRIMAN_APPROVED_BY_MANDOR",
+                Instant.now(),
+                0,
+                Map.of("supirId", "supir-3b", "totalKg", 300)
+        ));
+
+        verify(payrollManagementService).generateFromEvent(
+                "evt-3b",
+                "PengirimanApprovedMandor",
+                "supir-3b",
+                "SUPIR",
+                new BigDecimal("300.00"),
+                null,
+                "Pengiriman disetujui mandor untuk 300.00 Kg"
+        );
+    }
+
+    @Test
+    void consumePengirimanApprovedByAdminAliasGeneratesPayroll() {
+        paymentEventConsumer.consume(new DomainEventMessage(
+                "evt-4b",
+                "PENGIRIMAN_PARTIALLY_APPROVED_BY_ADMIN",
+                Instant.now(),
+                0,
+                Map.of("mandorId", "mandor-4b", "recognizedKg", 175)
+        ));
+
+        verify(payrollManagementService).generateFromEvent(
+                "evt-4b",
+                "PengirimanApprovedAdmin",
+                "mandor-4b",
+                "MANDOR",
+                new BigDecimal("175.00"),
+                null,
+                "Pengiriman diakui admin untuk 175.00 Kg"
+        );
+    }
+
+    @Test
     void consumeNotificationOnlyEventBroadcastsToTargets() {
         paymentEventConsumer.consume(new DomainEventMessage(
                 "evt-3",
