@@ -1,16 +1,16 @@
-name: CI SonarCloud
+name: Staging GHCR Publish
 
 on:
   push:
     branches:
-      - "**"
+      - staging
   pull_request:
     branches:
-      - "**"
+      - '**'
   workflow_dispatch:
 
 jobs:
-  ci:
+  sonar:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
 
       - name: Build, test, and generate coverage
         run: |
@@ -33,15 +33,15 @@ jobs:
           ./gradlew test jacocoTestReport --no-daemon
 
       - name: SonarCloud Scan
-        uses: sonarsource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
         with:
           projectBaseDir: .
           args: >
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION }}
             -Dsonar.projectName=palmery-payment
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.sources=src/main
@@ -55,7 +55,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
-          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY }}
         run: |
           set -euo pipefail
           query="pullRequest=${{ github.event.pull_request.number }}"
@@ -81,31 +81,43 @@ jobs:
         with:
           pollingTimeoutSec: 300
 
-  cd:
-    needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  publish:
+    needs: sonar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build application JAR
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: doodpanda
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Normalize owner name
+        id: owner
         run: |
-          chmod +x gradlew
-          ./gradlew clean bootJar --no-daemon
+          echo "value=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Build and push payment backend image
+        uses: docker/build-push-action@v6
         with:
-          name: palmery-payment-jar
-          path: build/libs/*.jar
-          if-no-files-found: error
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-payment-backend:staging
+            ghcr.io/${{ steps.owner.outputs.value }}/palmery-payment-backend:staging-${{ github.sha }}
