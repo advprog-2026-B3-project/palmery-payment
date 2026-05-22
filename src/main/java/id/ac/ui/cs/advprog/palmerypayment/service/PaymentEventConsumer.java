@@ -2,7 +2,6 @@ package id.ac.ui.cs.advprog.palmerypayment.service;
 
 import id.ac.ui.cs.advprog.palmerypayment.event.DomainEventMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -35,7 +34,6 @@ public class PaymentEventConsumer {
         this.payrollManagementService = payrollManagementService;
     }
 
-    @RabbitListener(queues = "${app.broker.payment-queue}")
     public void consume(DomainEventMessage event) {
         if (event == null || event.getEventType() == null || event.getEventType().isBlank()) {
             log.warn("Skipping empty broker event");
@@ -97,8 +95,8 @@ public class PaymentEventConsumer {
     }
 
     private void handleHarvestApproved(String eventId, Map<String, Object> payload) {
-        String userId = firstString(payload, "userId", "buruhUserId", "workerUserId", "targetUserId");
-        BigDecimal quantityKg = firstDecimal(payload, "quantityKg", "kg", "approvedKg");
+        String userId = firstString(payload, "userId", "buruhUserId", "workerUserId", "workerId", "targetUserId");
+        BigDecimal quantityKg = firstDecimal(payload, "quantityKg", "kg", "approvedKg", "kgHarvested");
         if (userId == null || quantityKg == null) {
             log.warn("PanenApproved missing userId or quantityKg");
             return;
@@ -124,8 +122,8 @@ public class PaymentEventConsumer {
     }
 
     private void handleShipmentApprovedByMandor(String eventId, Map<String, Object> payload) {
-        String userId = firstString(payload, "userId", "supirUserId", "driverUserId", "targetUserId");
-        BigDecimal quantityKg = firstDecimal(payload, "quantityKg", "kg", "approvedKg");
+        String userId = firstString(payload, "userId", "supirUserId", "driverUserId", "supirId", "targetUserId");
+        BigDecimal quantityKg = firstDecimal(payload, "quantityKg", "kg", "approvedKg", "totalKg");
         if (userId == null || quantityKg == null) {
             log.warn("PengirimanApprovedMandor missing userId or quantityKg");
             return;
@@ -151,8 +149,8 @@ public class PaymentEventConsumer {
     }
 
     private void handleShipmentApprovedByAdmin(String eventId, Map<String, Object> payload) {
-        String userId = firstString(payload, "userId", "mandorUserId", "targetUserId");
-        BigDecimal quantityKg = firstDecimal(payload, "kgDiakui", "approvedKg", "quantityKg", "kg");
+        String userId = firstString(payload, "userId", "mandorUserId", "mandorId", "targetUserId");
+        BigDecimal quantityKg = firstDecimal(payload, "kgDiakui", "recognizedKg", "approvedKg", "quantityKg", "kg");
         if (userId == null || quantityKg == null) {
             log.warn("PengirimanApprovedAdmin missing userId or kgDiakui");
             return;
@@ -274,7 +272,7 @@ public class PaymentEventConsumer {
     }
 
     private String defaultDescription(String eventType, Map<String, Object> payload) {
-        return switch (eventType.toUpperCase(Locale.ROOT)) {
+        return (switch (eventType.toUpperCase(Locale.ROOT)) {
             case "PANENREJECTED" ->
                     "Panen Anda ditolak. " + safeSuffix(firstString(payload, "reason", "alasan"));
             case "PENGIRIMANTIBA" ->
@@ -282,7 +280,7 @@ public class PaymentEventConsumer {
             case "PAYROLLDIPROSES" ->
                     "Status payroll terbaru: " + firstString(payload, "status");
             default -> "Ada pembaruan baru pada akun Anda.";
-        }.trim();
+        }).trim();
     }
 
     private String safeSuffix(String value) {

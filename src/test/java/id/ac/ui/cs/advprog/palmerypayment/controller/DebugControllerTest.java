@@ -124,6 +124,7 @@ class DebugControllerTest {
                 "evt-1",
                 "UserBaru",
                 Instant.parse("2026-05-01T00:00:00Z"),
+                0,
                 Map.of("userId", "buruh-1")
         );
         when(domainEventPublisher.publish("UserBaru", Map.of("userId", "buruh-1"))).thenReturn(published);

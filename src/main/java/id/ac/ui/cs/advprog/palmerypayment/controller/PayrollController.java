@@ -3,10 +3,11 @@ package id.ac.ui.cs.advprog.palmerypayment.controller;
 import id.ac.ui.cs.advprog.palmerypayment.dto.GeneratePayrollRequest;
 import id.ac.ui.cs.advprog.palmerypayment.dto.PayrollDecisionRequest;
 import id.ac.ui.cs.advprog.palmerypayment.dto.PayrollSummaryView;
+import id.ac.ui.cs.advprog.palmerypayment.security.CurrentUser;
 import id.ac.ui.cs.advprog.palmerypayment.service.PayrollManagementService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/payrolls")
 public class PayrollController {
 
@@ -48,9 +48,13 @@ public class PayrollController {
     @PatchMapping("/{payrollId}/approve")
     public ResponseEntity<?> approvePayroll(
             @PathVariable Long payrollId,
-            @RequestBody PayrollDecisionRequest request
+            @RequestBody(required = false) PayrollDecisionRequest request,
+            JwtAuthenticationToken authentication
     ) {
-        return handle(() -> ResponseEntity.ok(payrollManagementService.approve(payrollId, request.getAdminUserId())));
+        return handle(() -> {
+            CurrentUser currentUser = CurrentUser.from(authentication);
+            return ResponseEntity.ok(payrollManagementService.approve(payrollId, currentUser.userId()));
+        });
     }
 
     @PatchMapping("/{payrollId}/reject")

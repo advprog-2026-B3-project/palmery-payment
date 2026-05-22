@@ -38,6 +38,7 @@ class PaymentEventConsumerTest {
                 "evt-1",
                 "UserBaru",
                 Instant.now(),
+                0,
                 Map.of("userId", "buruh-1", "role", "BURUH", "displayName", "Buruh Demo")
         ));
 
@@ -51,6 +52,7 @@ class PaymentEventConsumerTest {
                 "evt-2",
                 "PanenApproved",
                 Instant.now(),
+                0,
                 Map.of("buruhUserId", "buruh-2", "kg", "120.5")
         ));
 
@@ -77,6 +79,7 @@ class PaymentEventConsumerTest {
                 "evt-3",
                 "PenugasanBaru",
                 Instant.now(),
+                0,
                 Map.of(
                         "targetUserIds", List.of("buruh-1", "buruh-2"),
                         "title", "Penugasan baru",

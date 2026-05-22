@@ -8,16 +8,18 @@ public class DomainEventMessage {
     private String eventId;
     private String eventType;
     private Instant occurredAt;
+    private int attempts;
     private Map<String, Object> payload;
 
     public DomainEventMessage() {
         // Jackson constructor
     }
 
-    public DomainEventMessage(String eventId, String eventType, Instant occurredAt, Map<String, Object> payload) {
+    public DomainEventMessage(String eventId, String eventType, Instant occurredAt, int attempts, Map<String, Object> payload) {
         this.eventId = eventId;
         this.eventType = eventType;
         this.occurredAt = occurredAt;
+        this.attempts = attempts;
         this.payload = payload;
     }
 
@@ -43,6 +45,14 @@ public class DomainEventMessage {
 
     public void setOccurredAt(Instant occurredAt) {
         this.occurredAt = occurredAt;
+    }
+
+    public int getAttempts() {
+        return attempts;
+    }
+
+    public void setAttempts(int attempts) {
+        this.attempts = attempts;
     }
 
     public Map<String, Object> getPayload() {

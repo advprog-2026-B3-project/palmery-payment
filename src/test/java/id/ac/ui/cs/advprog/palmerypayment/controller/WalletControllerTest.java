@@ -3,17 +3,20 @@ package id.ac.ui.cs.advprog.palmerypayment.controller;
 import id.ac.ui.cs.advprog.palmerypayment.dto.PayrollHistoryItem;
 import id.ac.ui.cs.advprog.palmerypayment.dto.WalletDashboardView;
 import id.ac.ui.cs.advprog.palmerypayment.service.WalletDashboardService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -50,10 +53,27 @@ class WalletControllerTest {
         );
         when(walletDashboardService.getWalletDashboard("user-10", null, null, null)).thenReturn(wallet);
 
-        ResponseEntity<WalletDashboardView> response = walletController.getWallet("user-10", null, null, null);
+        ResponseEntity<WalletDashboardView> response = walletController.getWallet(
+                "user-10",
+                authentication("user-10", "BURUH"),
+                null,
+                null,
+                null
+        );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(wallet, response.getBody());
         verify(walletDashboardService).getWalletDashboard("user-10", null, null, null);
+    }
+
+    private JwtAuthenticationToken authentication(String subject, String role) {
+        Jwt jwt = new Jwt(
+                "token",
+                Instant.now(),
+                Instant.now().plusSeconds(3600),
+                Map.of("alg", "HS256"),
+                Map.of("sub", subject, "role", role)
+        );
+        return new JwtAuthenticationToken(jwt, List.of());
     }
 }

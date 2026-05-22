@@ -12,6 +12,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.time.Instant;
 import java.util.List;
@@ -46,7 +48,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void myNotificationsReturnsInboxForHeaderUser() {
+    void myNotificationsReturnsInboxForAuthenticatedUser() {
         NotificationInboxView inbox = new NotificationInboxView(
                 "user-1",
                 1,
@@ -63,7 +65,7 @@ class NotificationControllerTest {
         );
         when(notificationService.getMyNotifications("user-1")).thenReturn(inbox);
 
-        ResponseEntity<?> response = notificationController.myNotifications("user-1", null);
+        ResponseEntity<?> response = notificationController.myNotifications(authentication("user-1", "BURUH"));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(inbox, response.getBody());
@@ -74,9 +76,20 @@ class NotificationControllerTest {
         when(notificationService.markAsRead(1L, "user-1"))
                 .thenThrow(new IllegalArgumentException("notification not found"));
 
-        ResponseEntity<?> response = notificationController.markAsRead(1L, "user-1", null);
+        ResponseEntity<?> response = notificationController.markAsRead(1L, authentication("user-1", "BURUH"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("notification not found", ((Map<?, ?>) response.getBody()).get("message"));
+    }
+
+    private JwtAuthenticationToken authentication(String subject, String role) {
+        Jwt jwt = new Jwt(
+                "token",
+                Instant.now(),
+                Instant.now().plusSeconds(3600),
+                Map.of("alg", "HS256"),
+                Map.of("sub", subject, "role", role)
+        );
+        return new JwtAuthenticationToken(jwt, List.of());
     }
 }

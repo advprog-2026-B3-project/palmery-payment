@@ -4,16 +4,8 @@ import java.math.BigDecimal;
 
 public class CreateTopUpRequest {
 
-    private String adminUserId;
     private BigDecimal amountRupiah;
-
-    public String getAdminUserId() {
-        return adminUserId;
-    }
-
-    public void setAdminUserId(String adminUserId) {
-        this.adminUserId = adminUserId;
-    }
+    private String paymentMethod;
 
     public BigDecimal getAmountRupiah() {
         return amountRupiah;
@@ -21,5 +13,13 @@ public class CreateTopUpRequest {
 
     public void setAmountRupiah(BigDecimal amountRupiah) {
         this.amountRupiah = amountRupiah;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 }

@@ -37,6 +37,15 @@ public class PaymentTopUp {
     @Column(nullable = false, length = 255)
     private String gatewayUrl;
 
+    @Column(length = 100)
+    private String gatewayToken;
+
+    @Column(length = 50)
+    private String gatewayProvider;
+
+    @Column(length = 50)
+    private String gatewayStatus;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -52,7 +61,9 @@ public class PaymentTopUp {
             BigDecimal amountRupiah,
             BigDecimal creditedAmount,
             String status,
-            String gatewayUrl
+            String gatewayUrl,
+            String gatewayToken,
+            String gatewayProvider
     ) {
         this.reference = reference;
         this.adminUserId = adminUserId;
@@ -60,6 +71,9 @@ public class PaymentTopUp {
         this.creditedAmount = creditedAmount;
         this.status = status;
         this.gatewayUrl = gatewayUrl;
+        this.gatewayToken = gatewayToken;
+        this.gatewayProvider = gatewayProvider;
+        this.gatewayStatus = status;
     }
 
     @PrePersist
@@ -97,6 +111,18 @@ public class PaymentTopUp {
         return gatewayUrl;
     }
 
+    public String getGatewayToken() {
+        return gatewayToken;
+    }
+
+    public String getGatewayProvider() {
+        return gatewayProvider;
+    }
+
+    public String getGatewayStatus() {
+        return gatewayStatus;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -107,6 +133,24 @@ public class PaymentTopUp {
 
     public void markPaid() {
         this.status = "PAID";
+        this.gatewayStatus = "settlement";
         this.paidAt = Instant.now();
+    }
+
+    public void markPaid(String gatewayStatus) {
+        this.status = "PAID";
+        this.gatewayStatus = gatewayStatus;
+        this.paidAt = Instant.now();
+    }
+
+    public void updateGatewayStatus(String gatewayStatus) {
+        if (gatewayStatus != null && !gatewayStatus.isBlank()) {
+            this.gatewayStatus = gatewayStatus.trim();
+        }
+    }
+
+    public void markFailed(String gatewayStatus) {
+        this.status = "FAILED";
+        this.gatewayStatus = gatewayStatus;
     }
 }

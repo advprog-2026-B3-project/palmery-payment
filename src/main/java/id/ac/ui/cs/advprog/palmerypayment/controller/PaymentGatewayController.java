@@ -1,57 +1,68 @@
 package id.ac.ui.cs.advprog.palmerypayment.controller;
 
 import id.ac.ui.cs.advprog.palmerypayment.dto.CreateTopUpRequest;
-import id.ac.ui.cs.advprog.palmerypayment.dto.TopUpWebhookRequest;
+import id.ac.ui.cs.advprog.palmerypayment.dto.MidtransNotificationRequest;
+import id.ac.ui.cs.advprog.palmerypayment.security.CurrentUser;
 import id.ac.ui.cs.advprog.palmerypayment.service.TopUpService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/payments")
 public class PaymentGatewayController {
 
     private final TopUpService topUpService;
-
-    @Value("${payment.gateway.webhook-secret:dev-topup-secret}")
-    private String webhookSecret;
 
     public PaymentGatewayController(TopUpService topUpService) {
         this.topUpService = topUpService;
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createTopUp(@RequestBody CreateTopUpRequest request) {
+    public ResponseEntity<?> createTopUp(
+            @RequestBody CreateTopUpRequest request,
+            JwtAuthenticationToken authentication
+    ) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(topUpService.create(request));
+            CurrentUser currentUser = CurrentUser.from(authentication);
+            return ResponseEntity.status(HttpStatus.CREATED).body(topUpService.create(request, currentUser.userId()));
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
         }
     }
 
     @PostMapping("/webhook")
-    public ResponseEntity<?> handleWebhook(
-            @RequestHeader(value = "X-Webhook-Secret", required = false) String providedSecret,
-            @RequestBody TopUpWebhookRequest request
-    ) {
-        if (!webhookSecret.equals(providedSecret)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "invalid webhook secret"));
-        }
-        if (!"paid".equalsIgnoreCase(request.getStatus())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "unsupported webhook status"));
-        }
-
+    public ResponseEntity<?> handleWebhook(@RequestBody MidtransNotificationRequest request) {
         try {
-            return ResponseEntity.ok(topUpService.confirm(request.getReference()));
+            return ResponseEntity.ok(topUpService.handleMidtransNotification(request));
+        } catch (IllegalArgumentException exception) {
+            HttpStatus status = "invalid Midtrans signature".equals(exception.getMessage())
+                    ? HttpStatus.UNAUTHORIZED
+                    : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(Map.of("message", exception.getMessage()));
+        }
+    }
+
+    @GetMapping("/{reference}")
+    public ResponseEntity<?> getTopUpStatus(
+            @PathVariable String reference,
+            JwtAuthenticationToken authentication,
+            @RequestParam(defaultValue = "false") boolean refresh
+    ) {
+        try {
+            CurrentUser currentUser = CurrentUser.from(authentication);
+            return ResponseEntity.ok(refresh
+                    ? topUpService.syncStatus(reference, currentUser.userId(), currentUser.isAdmin())
+                    : topUpService.getByReference(reference, currentUser.userId(), currentUser.isAdmin()));
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
         }
